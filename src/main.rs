@@ -190,7 +190,15 @@ fn load_resources<'a>(
         resources.images.insert(path.to_string(), image);
     }
 
-    let sound_paths = ["crash.wav", "eat.wav", "shrink.wav"];
+    let sound_paths = [
+        "crash.wav",
+        "eat.wav",
+        "shrink.wav",
+        "a4.wav",
+        "d4.wav",
+        "e4.wav",
+        "g4.wav",
+    ];
     for path in sound_paths {
         let full_path = "resources/sound/".to_string() + path;
         let chunk =
@@ -275,14 +283,14 @@ fn render(
     canvas.fill_rect(Rect::new(0, 0, SCREEN_WIDTH as u32, INFO_HEIGHT as u32))?;
 
     // energy
-    let max_energy_width = 100;
+    let max_energy_width = 120;
     canvas.set_draw_color(Color::RGB(32, 32, 32));
     canvas.fill_rect(Rect::new(0, 0, max_energy_width, INFO_HEIGHT as u32))?;
     canvas.set_draw_color(Color::RGB(128, 255, 128));
     canvas.fill_rect(Rect::new(
         0,
         0,
-        (max_energy_width as f32 * game.player.energy as f32 / 100.0) as u32,
+        (max_energy_width as f32 * game.player.energy as f32 / 100.0).floor() as u32,
         INFO_HEIGHT as u32,
     ))?;
 

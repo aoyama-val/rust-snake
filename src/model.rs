@@ -257,10 +257,22 @@ impl Game {
 
         match command {
             Command::None => {}
-            Command::Left => self.player.set_direction(Direction::Left),
-            Command::Right => self.player.set_direction(Direction::Right),
-            Command::Down => self.player.set_direction(Direction::Down),
-            Command::Up => self.player.set_direction(Direction::Up),
+            Command::Left => {
+                self.player.set_direction(Direction::Left);
+                self.requested_sounds.push("e4.wav");
+            }
+            Command::Right => {
+                self.player.set_direction(Direction::Right);
+                self.requested_sounds.push("d4.wav");
+            }
+            Command::Down => {
+                self.player.set_direction(Direction::Down);
+                self.requested_sounds.push("a4.wav");
+            }
+            Command::Up => {
+                self.player.set_direction(Direction::Up);
+                self.requested_sounds.push("g4.wav");
+            }
         }
 
         if self.frame != 0 && self.frame % 8 == 0 {
