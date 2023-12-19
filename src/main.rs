@@ -266,13 +266,6 @@ fn render(
         false,
         false,
     )?;
-    // canvas.set_draw_color(Color::RGBA(61, 122, 61, 255));
-    // canvas.fill_rect(Rect::new(
-    //     game.player.p.x * CELL_SIZE,
-    //     game.player.p.y * CELL_SIZE + INFO_HEIGHT,
-    //     CELL_SIZE as u32,
-    //     CELL_SIZE as u32,
-    // ))?;
 
     if game.is_over {
         canvas.set_draw_color(Color::RGBA(255, 0, 0, 128));
@@ -342,14 +335,6 @@ fn render(
         INFO_MARGIN_TOP,
         format!("{0: >3}", game.blue_ate_count),
     );
-
-    // render_number(
-    //     canvas,
-    //     resources,
-    //     SCREEN_WIDTH as i32 - 8 * 8,
-    //     INFO_MARGIN_TOP,
-    //     format!("{0: >8}", game.score),
-    // );
 
     canvas.present();
 

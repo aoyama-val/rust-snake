@@ -136,12 +136,6 @@ impl Player {
         }
 
         self.p = self.p.neighbor(self.direction.clone());
-
-        // print!("({} {})", self.p.x, self.p.y);
-        // for body in &self.bodies {
-        //     print!(" ({} {})", body.x, body.y);
-        // }
-        // print!("\n");
     }
 
     pub fn grow(&mut self) {
@@ -233,10 +227,6 @@ impl Game {
             }
         }
 
-        // for i in 0..10 {
-        //     game.player.grow();
-        // }
-
         game
     }
 
@@ -323,18 +313,4 @@ fn clamp<T: PartialOrd>(min: T, value: T, max: T) -> T {
         return max;
     }
     value
-}
-
-pub fn min_max_loop_inc(min: i32, value: i32, max: i32) -> i32 {
-    if value < min {
-        return value + (max + 1);
-    }
-    if value > max {
-        return value - (max + 1);
-    }
-    value
-}
-
-pub fn is_collide(x1: f32, y1: f32, w1: f32, h1: f32, x2: f32, y2: f32, w2: f32, h2: f32) -> bool {
-    return (x1 <= x2 + w2 && x2 <= x1 + w1) && (y1 <= y2 + h2 && y2 <= y1 + h1);
 }
