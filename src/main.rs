@@ -190,7 +190,7 @@ fn load_resources<'a>(
         resources.images.insert(path.to_string(), image);
     }
 
-    let sound_paths = ["crash.wav", "eat.wav"];
+    let sound_paths = ["crash.wav", "eat.wav", "shrink.wav"];
     for path in sound_paths {
         let full_path = "resources/sound/".to_string() + path;
         let chunk =

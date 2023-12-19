@@ -168,6 +168,10 @@ impl Player {
         };
         self.bodies.push(new_pos);
     }
+
+    pub fn shrink(&mut self) {
+        self.bodies.pop();
+    }
 }
 
 // p1からp2への向きを返す
@@ -266,13 +270,18 @@ impl Game {
         for food in &mut self.foods {
             if food.is_exist {
                 if food.p == self.player.p {
-                    self.player.energy =
-                        clamp(0, self.player.energy + food.color.energy(), ENERGY_MAX);
+                    food.is_exist = false;
                     self.ate_counts
                         .insert(food.color.clone(), self.ate_counts[&food.color] + 1);
-                    self.player.grow();
-                    self.requested_sounds.push("eat.wav");
-                    food.is_exist = false;
+                    if food.color == FoodColor::White {
+                        self.player.shrink();
+                        self.requested_sounds.push("shrink.wav");
+                    } else {
+                        self.player.energy =
+                            clamp(0, self.player.energy + food.color.energy(), ENERGY_MAX);
+                        self.player.grow();
+                        self.requested_sounds.push("eat.wav");
+                    }
                 }
             }
         }
@@ -314,6 +323,15 @@ impl Game {
         } else {
             FoodColor::White
         };
+        // self.foods[i].color = if r < 25 {
+        //     FoodColor::Blue
+        // } else if r < 50 {
+        //     FoodColor::Yellow
+        // } else if r < 75 {
+        //     FoodColor::Red
+        // } else {
+        //     FoodColor::White
+        // };
     }
 }
 
