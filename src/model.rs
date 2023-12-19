@@ -305,6 +305,13 @@ impl Game {
                     self.is_over = true;
                     self.requested_sounds.push("crash.wav");
                 }
+
+                // うんこと重なっている食べ物は消す
+                for food in &mut self.foods {
+                    if food.is_exist && food.p == poo.p {
+                        food.is_exist = false;
+                    }
+                }
             }
         }
 
@@ -345,15 +352,6 @@ impl Game {
         } else {
             FoodColor::White
         };
-        // self.foods[i].color = if r < 25 {
-        //     FoodColor::Blue
-        // } else if r < 50 {
-        //     FoodColor::Yellow
-        // } else if r < 75 {
-        //     FoodColor::Red
-        // } else {
-        //     FoodColor::White
-        // };
     }
 
     fn spawn_poo(&mut self) {
@@ -369,12 +367,6 @@ impl Game {
                 poo.p = pos.clone();
                 poo.is_exist = true;
                 break;
-            }
-        }
-
-        for food in &mut self.foods {
-            if food.is_exist && food.p == pos {
-                food.is_exist = false;
             }
         }
     }
