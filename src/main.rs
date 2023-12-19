@@ -15,8 +15,8 @@ const FPS: u32 = 30;
 const ATE_COUNT_WIDTH: i32 = 16;
 const ATE_COUNT_HEIGHT: i32 = 16;
 const INFO_MARGIN_TOP: i32 = 2;
-const WHITE_X: i32 = 270;
-const ATE_COUNT_AND_COLOR_WIDTH: i32 = 50;
+const WHITE_X: i32 = 150;
+const ATE_COUNT_AND_COLOR_WIDTH: i32 = 40;
 
 struct Image<'a> {
     texture: Texture<'a>,
@@ -275,7 +275,7 @@ fn render(
     canvas.fill_rect(Rect::new(0, 0, SCREEN_WIDTH as u32, INFO_HEIGHT as u32))?;
 
     // energy
-    let max_energy_width = 150;
+    let max_energy_width = 100;
     canvas.set_draw_color(Color::RGB(32, 32, 32));
     canvas.fill_rect(Rect::new(0, 0, max_energy_width, INFO_HEIGHT as u32))?;
     canvas.set_draw_color(Color::RGB(128, 255, 128));

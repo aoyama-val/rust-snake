@@ -1,7 +1,7 @@
 use rand::prelude::*;
 use std::{collections::HashMap, time};
 
-pub const SCREEN_WIDTH: i32 = 640;
+pub const SCREEN_WIDTH: i32 = 420;
 pub const SCREEN_HEIGHT: i32 = 420;
 pub const CELL_SIZE: i32 = 20;
 pub const INFO_HEIGHT: i32 = 20;
@@ -263,7 +263,7 @@ impl Game {
             Command::Up => self.player.set_direction(Direction::Up),
         }
 
-        if self.frame != 0 && self.frame % 10 == 0 {
+        if self.frame != 0 && self.frame % 8 == 0 {
             self.player.do_move();
         }
 
