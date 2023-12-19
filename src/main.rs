@@ -15,7 +15,7 @@ const FPS: u32 = 30;
 const ATE_COUNT_WIDTH: i32 = 16;
 const ATE_COUNT_HEIGHT: i32 = 16;
 const INFO_MARGIN_TOP: i32 = 2;
-const WHITE_X: i32 = 250;
+const WHITE_X: i32 = 270;
 const ATE_COUNT_AND_COLOR_WIDTH: i32 = 50;
 
 struct Image<'a> {
