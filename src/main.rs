@@ -212,12 +212,7 @@ fn render(
     // render foods
     for food in &game.foods {
         if food.is_exist {
-            let color = match food.color {
-                FoodColor::White => Color::RGB(209, 220, 230),
-                FoodColor::Red => Color::RGB(255, 128, 128),
-                FoodColor::Yellow => Color::RGB(255, 255, 128),
-                FoodColor::Blue => Color::RGB(128, 128, 255),
-            };
+            let color = get_draw_color(&food.color);
             canvas.set_draw_color(color);
             canvas.fill_rect(Rect::new(
                 food.p.x * CELL_SIZE,
@@ -291,78 +286,28 @@ fn render(
         INFO_HEIGHT as u32,
     ))?;
 
-    let mut x = WHITE_X;
+    let mut x = WHITE_X - ATE_COUNT_AND_COLOR_WIDTH;
 
-    // white_ate_count
-    canvas.set_draw_color(Color::RGB(209, 220, 230));
-    canvas.fill_rect(Rect::new(
-        x,
-        INFO_MARGIN_TOP,
-        ATE_COUNT_WIDTH as u32,
-        ATE_COUNT_HEIGHT as u32,
-    ))?;
-    x += ATE_COUNT_WIDTH + 4;
-    render_number(
-        canvas,
-        resources,
-        x,
-        INFO_MARGIN_TOP,
-        format!("{0: >3}", game.white_ate_count),
-    );
-
-    // red_ate_count
-    x += ATE_COUNT_AND_COLOR_WIDTH;
-    canvas.set_draw_color(Color::RGB(255, 128, 128));
-    canvas.fill_rect(Rect::new(
-        x,
-        INFO_MARGIN_TOP,
-        ATE_COUNT_WIDTH as u32,
-        ATE_COUNT_HEIGHT as u32,
-    ))?;
-    x += ATE_COUNT_WIDTH + 4;
-    render_number(
-        canvas,
-        resources,
-        x,
-        INFO_MARGIN_TOP,
-        format!("{0: >3}", game.red_ate_count),
-    );
-
-    // yellow_ate_count
-    x += ATE_COUNT_AND_COLOR_WIDTH;
-    canvas.set_draw_color(Color::RGB(255, 255, 128));
-    canvas.fill_rect(Rect::new(
-        x,
-        INFO_MARGIN_TOP,
-        ATE_COUNT_WIDTH as u32,
-        ATE_COUNT_HEIGHT as u32,
-    ))?;
-    x += ATE_COUNT_WIDTH + 4;
-    render_number(
-        canvas,
-        resources,
-        x,
-        INFO_MARGIN_TOP,
-        format!("{0: >3}", game.yellow_ate_count),
-    );
-
-    // blue_ate_count
-    x += ATE_COUNT_AND_COLOR_WIDTH;
-    canvas.set_draw_color(Color::RGB(128, 128, 255));
-    canvas.fill_rect(Rect::new(
-        x,
-        INFO_MARGIN_TOP,
-        ATE_COUNT_WIDTH as u32,
-        ATE_COUNT_HEIGHT as u32,
-    ))?;
-    x += ATE_COUNT_WIDTH + 4;
-    render_number(
-        canvas,
-        resources,
-        x,
-        INFO_MARGIN_TOP,
-        format!("{0: >3}", game.blue_ate_count),
-    );
+    // ate counts
+    for color in FoodColor::all() {
+        x += ATE_COUNT_AND_COLOR_WIDTH;
+        let draw_color = get_draw_color(&color);
+        canvas.set_draw_color(draw_color);
+        canvas.fill_rect(Rect::new(
+            x,
+            INFO_MARGIN_TOP,
+            ATE_COUNT_WIDTH as u32,
+            ATE_COUNT_HEIGHT as u32,
+        ))?;
+        x += ATE_COUNT_WIDTH + 4;
+        render_number(
+            canvas,
+            resources,
+            x,
+            INFO_MARGIN_TOP,
+            format!("{0: >3}", game.ate_counts[&color.clone()]),
+        );
+    }
 
     render_number(
         canvas,
@@ -375,6 +320,15 @@ fn render(
     canvas.present();
 
     Ok(())
+}
+
+fn get_draw_color(food_color: &FoodColor) -> Color {
+    match food_color {
+        FoodColor::White => Color::RGB(209, 220, 230),
+        FoodColor::Red => Color::RGB(255, 128, 128),
+        FoodColor::Yellow => Color::RGB(255, 255, 128),
+        FoodColor::Blue => Color::RGB(128, 128, 255),
+    }
 }
 
 fn render_number(

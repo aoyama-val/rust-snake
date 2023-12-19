@@ -1,5 +1,5 @@
 use rand::prelude::*;
-use std::time;
+use std::{collections::HashMap, time};
 
 pub const SCREEN_WIDTH: i32 = 640;
 pub const SCREEN_HEIGHT: i32 = 420;
@@ -40,6 +40,7 @@ impl Direction {
     }
 }
 
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum FoodColor {
     White,
     Red,
@@ -48,6 +49,15 @@ pub enum FoodColor {
 }
 
 impl FoodColor {
+    pub fn all() -> Vec<Self> {
+        vec![
+            FoodColor::White,
+            FoodColor::Red,
+            FoodColor::Yellow,
+            FoodColor::Blue,
+        ]
+    }
+
     pub fn energy(&self) -> i32 {
         match self {
             FoodColor::White => 0,
@@ -180,10 +190,7 @@ pub struct Game {
     pub player: Player,
     pub score: i32,
     pub requested_sounds: Vec<&'static str>,
-    pub white_ate_count: i32,
-    pub red_ate_count: i32,
-    pub yellow_ate_count: i32,
-    pub blue_ate_count: i32,
+    pub ate_counts: HashMap<FoodColor, i32>,
     pub foods: Vec<Food>,
     pub poos: Vec<Poo>,
 }
@@ -204,13 +211,14 @@ impl Game {
             player: Player::new(),
             score: 0,
             requested_sounds: Vec::new(),
-            white_ate_count: 0,
-            red_ate_count: 0,
-            yellow_ate_count: 0,
-            blue_ate_count: 0,
+            ate_counts: HashMap::new(),
             foods: Vec::new(),
             poos: Vec::new(),
         };
+
+        for color in FoodColor::all() {
+            game.ate_counts.insert(color, 0);
+        }
 
         for y in CELLS_Y_MIN..=CELLS_Y_MAX {
             for x in CELLS_X_MIN..=CELLS_X_MAX {
@@ -260,12 +268,8 @@ impl Game {
                 if food.p == self.player.p {
                     self.player.energy =
                         clamp(0, self.player.energy + food.color.energy(), ENERGY_MAX);
-                    match food.color {
-                        FoodColor::White => self.white_ate_count += 1,
-                        FoodColor::Red => self.red_ate_count += 1,
-                        FoodColor::Yellow => self.yellow_ate_count += 1,
-                        FoodColor::Blue => self.blue_ate_count += 1,
-                    }
+                    self.ate_counts
+                        .insert(food.color.clone(), self.ate_counts[&food.color] + 1);
                     self.player.grow();
                     self.requested_sounds.push("eat.wav");
                     food.is_exist = false;
