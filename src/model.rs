@@ -197,6 +197,8 @@ pub struct Game {
     pub ate_counts: HashMap<FoodColor, i32>,
     pub foods: Vec<Food>,
     pub poos: Vec<Poo>,
+    pub poo_spawn_frame: i32,
+    pub ate_count: i32,
 }
 
 impl Game {
@@ -218,6 +220,8 @@ impl Game {
             ate_counts: HashMap::new(),
             foods: Vec::new(),
             poos: Vec::new(),
+            poo_spawn_frame: -1,
+            ate_count: 0,
         };
 
         for color in FoodColor::all() {
@@ -267,6 +271,10 @@ impl Game {
             self.spawn_food();
         }
 
+        if self.frame == self.poo_spawn_frame {
+            self.spawn_poo();
+        }
+
         for food in &mut self.foods {
             if food.is_exist {
                 if food.p == self.player.p {
@@ -280,8 +288,22 @@ impl Game {
                         self.player.energy =
                             clamp(0, self.player.energy + food.color.energy(), ENERGY_MAX);
                         self.player.grow();
+                        self.ate_count += 1;
+                        if self.ate_count % 3 == 0 {
+                            self.poo_spawn_frame = self.frame + 60; // 指定フレームにうんこを生み出す
+                        }
                         self.requested_sounds.push("eat.wav");
                     }
+                }
+            }
+        }
+
+        for poo in &mut self.poos {
+            if poo.is_exist {
+                if poo.p == self.player.p {
+                    poo.is_exist = false;
+                    self.is_over = true;
+                    self.requested_sounds.push("crash.wav");
                 }
             }
         }
@@ -332,6 +354,29 @@ impl Game {
         // } else {
         //     FoodColor::White
         // };
+    }
+
+    fn spawn_poo(&mut self) {
+        let pos;
+        if self.player.bodies.len() > 0 {
+            pos = self.player.bodies.last().unwrap().clone();
+        } else {
+            pos = self.player.p.neighbor(self.player.direction.opposite());
+        }
+
+        for poo in &mut self.poos {
+            if !poo.is_exist {
+                poo.p = pos.clone();
+                poo.is_exist = true;
+                break;
+            }
+        }
+
+        for food in &mut self.foods {
+            if food.is_exist && food.p == pos {
+                food.is_exist = false;
+            }
+        }
     }
 }
 
