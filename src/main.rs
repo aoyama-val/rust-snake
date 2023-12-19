@@ -46,7 +46,7 @@ pub fn main() -> Result<(), String> {
 
     let video_subsystem = sdl_context.video()?;
     let window = video_subsystem
-        .window("rust-asteroids", SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32)
+        .window("rust-snake", SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32)
         .position_centered()
         .opengl()
         .build()
