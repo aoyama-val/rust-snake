@@ -41,6 +41,7 @@ impl Direction {
 }
 
 pub enum FoodColor {
+    White,
     Red,
     Yellow,
     Blue,
@@ -49,9 +50,10 @@ pub enum FoodColor {
 impl FoodColor {
     pub fn energy(&self) -> i32 {
         match self {
-            FoodColor::Red => 30,
-            FoodColor::Yellow => 20,
-            FoodColor::Blue => 10,
+            FoodColor::White => 0,
+            FoodColor::Red => 20,
+            FoodColor::Yellow => 10,
+            FoodColor::Blue => 5,
         }
     }
 }
@@ -178,6 +180,7 @@ pub struct Game {
     pub player: Player,
     pub score: i32,
     pub requested_sounds: Vec<&'static str>,
+    pub white_ate_count: i32,
     pub red_ate_count: i32,
     pub yellow_ate_count: i32,
     pub blue_ate_count: i32,
@@ -201,9 +204,10 @@ impl Game {
             player: Player::new(),
             score: 0,
             requested_sounds: Vec::new(),
-            red_ate_count: 0,
-            yellow_ate_count: 0,
-            blue_ate_count: 0,
+            white_ate_count: 999,
+            red_ate_count: 999,
+            yellow_ate_count: 999,
+            blue_ate_count: 999,
             foods: Vec::new(),
             poos: Vec::new(),
         };
@@ -257,6 +261,7 @@ impl Game {
                     self.player.energy =
                         clamp(0, self.player.energy + food.color.energy(), ENERGY_MAX);
                     match food.color {
+                        FoodColor::White => self.white_ate_count += 1,
                         FoodColor::Red => self.red_ate_count += 1,
                         FoodColor::Yellow => self.yellow_ate_count += 1,
                         FoodColor::Blue => self.blue_ate_count += 1,
@@ -281,6 +286,7 @@ impl Game {
         }
 
         self.frame += 1;
+        self.score = self.frame / 30;
     }
 
     fn foods_count(&self) -> usize {
@@ -297,10 +303,12 @@ impl Game {
         let r: i32 = self.rng.gen_range(0..100);
         self.foods[i].color = if r < 40 {
             FoodColor::Blue
-        } else if r < 80 {
+        } else if r < 75 {
             FoodColor::Yellow
-        } else {
+        } else if r < 95 {
             FoodColor::Red
+        } else {
+            FoodColor::White
         };
     }
 }
