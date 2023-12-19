@@ -4,10 +4,11 @@ use std::time;
 pub const SCREEN_WIDTH: i32 = 640;
 pub const SCREEN_HEIGHT: i32 = 420;
 pub const CELL_SIZE: i32 = 20;
+pub const INFO_HEIGHT: i32 = 20;
 pub const CELLS_X_LEN: i32 = SCREEN_WIDTH / CELL_SIZE;
 pub const CELLS_X_MIN: i32 = 0;
 pub const CELLS_X_MAX: i32 = CELLS_X_LEN - 1;
-pub const CELLS_Y_LEN: i32 = SCREEN_HEIGHT / CELL_SIZE;
+pub const CELLS_Y_LEN: i32 = (SCREEN_HEIGHT - INFO_HEIGHT) / CELL_SIZE;
 pub const CELLS_Y_MIN: i32 = 0;
 pub const CELLS_Y_MAX: i32 = CELLS_Y_LEN - 1;
 
@@ -19,11 +20,23 @@ pub enum Command {
     Up,
 }
 
+#[derive(Clone)]
 pub enum Direction {
     Left,
     Right,
     Down,
     Up,
+}
+
+impl Direction {
+    pub fn opposite(&self) -> Direction {
+        match self {
+            Direction::Left => Direction::Right,
+            Direction::Right => Direction::Left,
+            Direction::Down => Direction::Up,
+            Direction::Up => Direction::Down,
+        }
+    }
 }
 
 #[derive(Debug, Default, Clone)]
@@ -32,10 +45,29 @@ pub struct Point {
     pub y: i32,
 }
 
+impl Point {
+    pub fn new(x: i32, y: i32) -> Self {
+        Point {
+            x: (CELLS_X_LEN + x) % CELLS_X_LEN,
+            y: (CELLS_Y_LEN + y) % CELLS_Y_LEN,
+        }
+    }
+
+    pub fn neighbor(&self, direction: Direction) -> Self {
+        match direction {
+            Direction::Left => Self::new(self.x - 1, self.y),
+            Direction::Right => Self::new(self.x + 1, self.y),
+            Direction::Up => Self::new(self.x, self.y - 1),
+            Direction::Down => Self::new(self.x, self.y + 1),
+        }
+    }
+}
+
 pub struct Player {
     pub p: Point,
     pub direction: Direction,
-    pub body: Vec<Point>,
+    pub bodies: Vec<Point>,
+    pub energy: i32,
 }
 
 impl Player {
@@ -43,7 +75,8 @@ impl Player {
         let player = Player {
             p: Point::default(),
             direction: Direction::Up,
-            body: Vec::new(),
+            bodies: Vec::new(),
+            energy: 100,
         };
         player
     }
@@ -62,13 +95,58 @@ impl Player {
     }
 
     pub fn do_move(&mut self) {
-        match self.direction {
-            Direction::Left => self.p.x = min_max_loop_inc(CELLS_X_MIN, self.p.x - 1, CELLS_X_MAX),
-            Direction::Right => self.p.x = min_max_loop_inc(CELLS_X_MIN, self.p.x + 1, CELLS_X_MAX),
-            Direction::Up => self.p.y = min_max_loop_inc(CELLS_Y_MIN, self.p.y - 1, CELLS_Y_MAX),
-            Direction::Down => self.p.y = min_max_loop_inc(CELLS_Y_MIN, self.p.y + 1, CELLS_Y_MAX),
+        self.energy -= 1;
+
+        if self.bodies.len() >= 1 {
+            let mut i = self.bodies.len() - 1;
+            while i >= 1 {
+                self.bodies[i] = self.bodies[i - 1].clone();
+                i -= 1;
+            }
+
+            self.bodies[0] = self.p.clone();
         }
-        println!("{} {}", self.p.x, self.p.y);
+
+        self.p = self.p.neighbor(self.direction.clone());
+
+        // print!("({} {})", self.p.x, self.p.y);
+        // for body in &self.bodies {
+        //     print!(" ({} {})", body.x, body.y);
+        // }
+        // print!("\n");
+    }
+
+    pub fn grow(&mut self) {
+        let new_pos = match self.bodies.len() {
+            0 => self.p.neighbor(self.direction.opposite()),
+            1 => {
+                let direction = get_direction(self.p.clone(), self.bodies[0].clone());
+                self.bodies[0].neighbor(direction)
+            }
+            _ => {
+                let direction = get_direction(
+                    self.bodies[self.bodies.len() - 2].clone(),
+                    self.bodies[self.bodies.len() - 1].clone(),
+                );
+                let last_pos = self.bodies.last().unwrap();
+                last_pos.neighbor(direction)
+            }
+        };
+        self.bodies.push(new_pos);
+        println!("grow!");
+    }
+}
+
+// p1からp2への向きを返す
+fn get_direction(p1: Point, p2: Point) -> Direction {
+    if p1.x < p2.x {
+        Direction::Right
+    } else if p1.x > p2.x {
+        Direction::Left
+    } else if p1.y < p2.y {
+        Direction::Down
+    } else {
+        Direction::Up
     }
 }
 
@@ -79,6 +157,9 @@ pub struct Game {
     pub player: Player,
     pub score: i32,
     pub requested_sounds: Vec<&'static str>,
+    pub red_ate_count: i32,
+    pub yellow_ate_count: i32,
+    pub blue_ate_count: i32,
 }
 
 impl Game {
@@ -90,18 +171,21 @@ impl Game {
             .as_secs();
         let rng = StdRng::seed_from_u64(timestamp);
 
-        let game = Game {
+        let mut game = Game {
             rng: rng,
             is_over: false,
             frame: 0,
             player: Player::new(),
             score: 0,
             requested_sounds: Vec::new(),
+            red_ate_count: 999,
+            yellow_ate_count: 999,
+            blue_ate_count: 999,
         };
 
-        println!("CELLS_Y_LEN = {}", CELLS_Y_LEN);
-        println!("CELLS_Y_MIN = {}", CELLS_Y_MIN);
-        println!("CELLS_Y_MAX = {}", CELLS_Y_MAX);
+        // game.player.grow();
+        // game.player.grow();
+        // game.player.grow();
 
         game
     }
@@ -123,9 +207,13 @@ impl Game {
             self.player.do_move();
         }
 
-        // if self.rng.gen_bool(0.07) && self.asteroids.len() < 30 {
-        //     self.spawn_asteroid();
-        // }
+        if self.frame != 0 && self.frame % 30 == 0 {
+            self.player.grow();
+        }
+
+        if self.player.energy < 0 {
+            self.is_over = true;
+        }
 
         self.frame += 1;
     }
@@ -143,11 +231,9 @@ fn clamp<T: PartialOrd>(min: T, value: T, max: T) -> T {
 
 pub fn min_max_loop_inc(min: i32, value: i32, max: i32) -> i32 {
     if value < min {
-        println!("over!");
         return value + (max + 1);
     }
     if value > max {
-        println!("over! 2");
         return value - (max + 1);
     }
     value

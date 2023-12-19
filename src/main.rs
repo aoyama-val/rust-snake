@@ -12,6 +12,9 @@ mod model;
 use crate::model::*;
 
 const FPS: u32 = 30;
+const ATE_COUNT_WIDTH: i32 = 16;
+const ATE_COUNT_HEIGHT: i32 = 16;
+const INFO_MARGIN_TOP: i32 = 2;
 
 struct Image<'a> {
     texture: Texture<'a>,
@@ -217,35 +220,115 @@ fn render(
     canvas.set_draw_color(Color::RGB(0, 0, 0));
     canvas.clear();
 
-    // render player
-    let head = resources.images.get_mut("head").unwrap();
-    canvas
-        .copy_ex(
-            &head.texture,
-            None,
-            Rect::new(
-                game.player.p.x * CELL_SIZE,
-                game.player.p.y * CELL_SIZE,
-                CELL_SIZE as u32,
-                CELL_SIZE as u32,
-            ),
-            game.player.get_angle() as f64, /* SDLのangleは時計回りが正 */
-            Point::new(CELL_SIZE / 2, CELL_SIZE / 2),
-            false,
-            false,
-        )
-        .unwrap();
+    // render head
+    // let head = resources.images.get_mut("head").unwrap();
+    // canvas.copy_ex(
+    //     &head.texture,
+    //     None,
+    //     Rect::new(
+    //         game.player.p.x * CELL_SIZE,
+    //         game.player.p.y * CELL_SIZE + INFO_HEIGHT,
+    //         CELL_SIZE as u32,
+    //         CELL_SIZE as u32,
+    //     ),
+    //     game.player.get_angle() as f64, /* SDLのangleは時計回りが正 */
+    //     Point::new(CELL_SIZE / 2, CELL_SIZE / 2),
+    //     false,
+    //     false,
+    // )?;
+    canvas.set_draw_color(Color::RGBA(61, 122, 61, 255));
+    canvas.fill_rect(Rect::new(
+        game.player.p.x * CELL_SIZE,
+        game.player.p.y * CELL_SIZE + INFO_HEIGHT,
+        CELL_SIZE as u32,
+        CELL_SIZE as u32,
+    ))?;
+
+    // render bodies
+    canvas.set_draw_color(Color::RGBA(61, 122, 61, 255));
+    for body in &game.player.bodies {
+        canvas.fill_rect(Rect::new(
+            body.x * CELL_SIZE,
+            body.y * CELL_SIZE + INFO_HEIGHT,
+            CELL_SIZE as u32,
+            CELL_SIZE as u32,
+        ))?;
+    }
 
     if game.is_over {
         canvas.set_draw_color(Color::RGBA(255, 0, 0, 128));
         canvas.fill_rect(Rect::new(0, 0, SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32))?;
     }
 
+    // render info
+    canvas.set_draw_color(Color::RGB(64, 64, 64));
+    canvas.fill_rect(Rect::new(0, 0, SCREEN_WIDTH as u32, INFO_HEIGHT as u32))?;
+
+    // energy
+    let max_energy_width = 150;
+    canvas.set_draw_color(Color::RGB(32, 32, 32));
+    canvas.fill_rect(Rect::new(0, 0, max_energy_width, INFO_HEIGHT as u32))?;
+    canvas.set_draw_color(Color::RGB(128, 255, 128));
+    canvas.fill_rect(Rect::new(
+        0,
+        0,
+        (max_energy_width as f32 * game.player.energy as f32 / 100.0) as u32,
+        INFO_HEIGHT as u32,
+    ))?;
+
+    // red_ate_count
+    canvas.set_draw_color(Color::RGB(255, 128, 128));
+    canvas.fill_rect(Rect::new(
+        SCREEN_WIDTH - 290,
+        INFO_MARGIN_TOP,
+        ATE_COUNT_WIDTH as u32,
+        ATE_COUNT_HEIGHT as u32,
+    ))?;
+    render_number(
+        canvas,
+        resources,
+        SCREEN_WIDTH - 290 + ATE_COUNT_WIDTH + 4,
+        INFO_MARGIN_TOP,
+        format!("{0: >3}", game.red_ate_count),
+    );
+
+    // yellow_ate_count
+    canvas.set_draw_color(Color::RGB(255, 255, 128));
+    canvas.fill_rect(Rect::new(
+        SCREEN_WIDTH - 220,
+        INFO_MARGIN_TOP,
+        ATE_COUNT_WIDTH as u32,
+        ATE_COUNT_HEIGHT as u32,
+    ))?;
+    render_number(
+        canvas,
+        resources,
+        SCREEN_WIDTH - 220 + ATE_COUNT_WIDTH + 4,
+        INFO_MARGIN_TOP,
+        format!("{0: >3}", game.yellow_ate_count),
+    );
+
+    // blue_ate_count
+    canvas.set_draw_color(Color::RGB(128, 128, 255));
+    canvas.fill_rect(Rect::new(
+        SCREEN_WIDTH - 150,
+        INFO_MARGIN_TOP,
+        ATE_COUNT_WIDTH as u32,
+        ATE_COUNT_HEIGHT as u32,
+    ))?;
+    render_number(
+        canvas,
+        resources,
+        SCREEN_WIDTH - 150 + ATE_COUNT_WIDTH + 4,
+        INFO_MARGIN_TOP,
+        format!("{0: >3}", game.blue_ate_count),
+    );
+
     render_number(
         canvas,
         resources,
         SCREEN_WIDTH as i32 - 8 * 8,
-        0,
+        INFO_MARGIN_TOP,
         format!("{0: >8}", game.score),
     );
 
