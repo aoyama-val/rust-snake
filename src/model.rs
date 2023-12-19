@@ -11,6 +11,7 @@ pub const CELLS_X_MAX: i32 = CELLS_X_LEN - 1;
 pub const CELLS_Y_LEN: i32 = (SCREEN_HEIGHT - INFO_HEIGHT) / CELL_SIZE;
 pub const CELLS_Y_MIN: i32 = 0;
 pub const CELLS_Y_MAX: i32 = CELLS_Y_LEN - 1;
+pub const ENERGY_MAX: i32 = 100;
 
 pub enum Command {
     None,
@@ -39,7 +40,34 @@ impl Direction {
     }
 }
 
-#[derive(Debug, Default, Clone)]
+pub enum FoodColor {
+    Red,
+    Yellow,
+    Blue,
+}
+
+impl FoodColor {
+    pub fn energy(&self) -> i32 {
+        match self {
+            FoodColor::Red => 30,
+            FoodColor::Yellow => 20,
+            FoodColor::Blue => 10,
+        }
+    }
+}
+
+pub struct Food {
+    pub color: FoodColor,
+    pub p: Point,
+    pub is_exist: bool,
+}
+
+pub struct Poo {
+    pub p: Point,
+    pub is_exist: bool,
+}
+
+#[derive(Debug, Default, Clone, Eq, PartialEq)]
 pub struct Point {
     pub x: i32,
     pub y: i32,
@@ -73,10 +101,10 @@ pub struct Player {
 impl Player {
     pub fn new() -> Self {
         let player = Player {
-            p: Point::default(),
+            p: Point::new(CELLS_X_LEN / 2, CELLS_Y_LEN / 2),
             direction: Direction::Up,
             bodies: Vec::new(),
-            energy: 100,
+            energy: ENERGY_MAX,
         };
         player
     }
@@ -133,7 +161,6 @@ impl Player {
             }
         };
         self.bodies.push(new_pos);
-        println!("grow!");
     }
 }
 
@@ -160,6 +187,8 @@ pub struct Game {
     pub red_ate_count: i32,
     pub yellow_ate_count: i32,
     pub blue_ate_count: i32,
+    pub foods: Vec<Food>,
+    pub poos: Vec<Poo>,
 }
 
 impl Game {
@@ -178,14 +207,35 @@ impl Game {
             player: Player::new(),
             score: 0,
             requested_sounds: Vec::new(),
-            red_ate_count: 999,
-            yellow_ate_count: 999,
-            blue_ate_count: 999,
+            red_ate_count: 0,
+            yellow_ate_count: 0,
+            blue_ate_count: 0,
+            foods: Vec::new(),
+            poos: Vec::new(),
         };
 
-        // game.player.grow();
-        // game.player.grow();
-        // game.player.grow();
+        for y in CELLS_Y_MIN..=CELLS_Y_MAX {
+            for x in CELLS_X_MIN..=CELLS_X_MAX {
+                game.foods.push(Food {
+                    color: FoodColor::Red,
+                    p: Point { x: x, y: y },
+                    is_exist: false,
+                });
+            }
+        }
+
+        for y in CELLS_Y_MIN..=CELLS_Y_MAX {
+            for x in CELLS_X_MIN..=CELLS_X_MAX {
+                game.poos.push(Poo {
+                    p: Point { x: x, y: y },
+                    is_exist: false,
+                });
+            }
+        }
+
+        // for i in 0..10 {
+        //     game.player.grow();
+        // }
 
         game
     }
@@ -203,19 +253,65 @@ impl Game {
             Command::Up => self.player.set_direction(Direction::Up),
         }
 
-        if self.frame != 0 && self.frame % 15 == 0 {
+        if self.frame != 0 && self.frame % 10 == 0 {
             self.player.do_move();
         }
 
-        if self.frame != 0 && self.frame % 30 == 0 {
-            self.player.grow();
+        if self.frame != 0 && self.frame % 30 == 0 && self.foods_count() < 5 {
+            self.spawn_food();
+        }
+
+        for food in &mut self.foods {
+            if food.is_exist {
+                if food.p == self.player.p {
+                    self.player.energy =
+                        clamp(0, self.player.energy + food.color.energy(), ENERGY_MAX);
+                    match food.color {
+                        FoodColor::Red => self.red_ate_count += 1,
+                        FoodColor::Yellow => self.yellow_ate_count += 1,
+                        FoodColor::Blue => self.blue_ate_count += 1,
+                    }
+                    self.player.grow();
+                    self.requested_sounds.push("eat.wav");
+                    food.is_exist = false;
+                }
+            }
+        }
+
+        for body in &self.player.bodies {
+            if *body == self.player.p {
+                self.is_over = true;
+                self.requested_sounds.push("crash.wav");
+            }
         }
 
         if self.player.energy < 0 {
             self.is_over = true;
+            self.requested_sounds.push("crash.wav");
         }
 
         self.frame += 1;
+    }
+
+    fn foods_count(&self) -> usize {
+        self.foods.iter().filter(|x| x.is_exist).count()
+    }
+
+    fn spawn_food(&mut self) {
+        let i: usize = self.rng.gen_range(0..self.foods.len());
+        if self.foods[i].is_exist {
+            return;
+        }
+        self.foods[i].is_exist = true;
+
+        let r: i32 = self.rng.gen_range(0..100);
+        self.foods[i].color = if r < 40 {
+            FoodColor::Blue
+        } else if r < 80 {
+            FoodColor::Yellow
+        } else {
+            FoodColor::Red
+        };
     }
 }
 

@@ -153,41 +153,28 @@ fn load_resources<'a>(
         .unwrap();
     canvas
         .with_texture_canvas(&mut head_texture, |texture_canvas| {
-            texture_canvas.set_draw_color(Color::RGBA(0, 255, 0, 255));
+            texture_canvas.set_draw_color(Color::RGBA(61, 122, 61, 255));
             texture_canvas
-                .draw_line(Point::new(9, 0), Point::new(2, 19))
+                .fill_rect(Rect::new(0, 0, CELL_SIZE as u32, CELL_SIZE as u32))
                 .unwrap();
+
+            // 黒目
+            texture_canvas.set_draw_color(Color::RGBA(255, 255, 255, 255));
+            texture_canvas.fill_rect(Rect::new(6, 0, 3, 3)).unwrap();
             texture_canvas
-                .draw_line(Point::new(2, 19), Point::new(16, 19))
+                .fill_rect(Rect::new(CELL_SIZE - 6 - 1, 0, 3, 3))
                 .unwrap();
+
+            // 白目
+            texture_canvas.set_draw_color(Color::RGBA(0, 0, 0, 255));
+            texture_canvas.fill_rect(Rect::new(6 + 2, 0, 2, 2)).unwrap();
             texture_canvas
-                .draw_line(Point::new(16, 19), Point::new(9, 0))
+                .fill_rect(Rect::new(CELL_SIZE - 6 - 1, 0, 2, 2))
                 .unwrap();
         })
         .unwrap();
     let head_image = Image::new(head_texture);
     resources.images.insert("head".to_string(), head_image);
-
-    // create body texture
-    let body_texture_size = 20;
-    let mut body_texture = texture_creator
-        .create_texture(
-            None,
-            sdl2::render::TextureAccess::Target,
-            body_texture_size,
-            body_texture_size,
-        )
-        .unwrap();
-    canvas
-        .with_texture_canvas(&mut body_texture, |texture_canvas| {
-            texture_canvas.set_draw_color(Color::RGBA(255, 255, 255, 255));
-            texture_canvas
-                .draw_rect(Rect::new(0, 0, body_texture_size, body_texture_size))
-                .unwrap();
-        })
-        .unwrap();
-    let body_image = Image::new(body_texture);
-    resources.images.insert("body".to_string(), body_image);
 
     let image_paths = ["numbers.bmp"];
     for path in image_paths {
@@ -201,7 +188,7 @@ fn load_resources<'a>(
         resources.images.insert(path.to_string(), image);
     }
 
-    let sound_paths = ["crash.wav"];
+    let sound_paths = ["crash.wav", "eat.wav"];
     for path in sound_paths {
         let full_path = "resources/sound/".to_string() + path;
         let chunk =
@@ -220,29 +207,37 @@ fn render(
     canvas.set_draw_color(Color::RGB(0, 0, 0));
     canvas.clear();
 
-    // render head
-    // let head = resources.images.get_mut("head").unwrap();
-    // canvas.copy_ex(
-    //     &head.texture,
-    //     None,
-    //     Rect::new(
-    //         game.player.p.x * CELL_SIZE,
-    //         game.player.p.y * CELL_SIZE + INFO_HEIGHT,
-    //         CELL_SIZE as u32,
-    //         CELL_SIZE as u32,
-    //     ),
-    //     game.player.get_angle() as f64, /* SDLのangleは時計回りが正 */
-    //     Point::new(CELL_SIZE / 2, CELL_SIZE / 2),
-    //     false,
-    //     false,
-    // )?;
-    canvas.set_draw_color(Color::RGBA(61, 122, 61, 255));
-    canvas.fill_rect(Rect::new(
-        game.player.p.x * CELL_SIZE,
-        game.player.p.y * CELL_SIZE + INFO_HEIGHT,
-        CELL_SIZE as u32,
-        CELL_SIZE as u32,
-    ))?;
+    // render foods
+    for food in &game.foods {
+        if food.is_exist {
+            let color = match food.color {
+                FoodColor::Red => Color::RGB(255, 128, 128),
+                FoodColor::Yellow => Color::RGB(255, 255, 128),
+                FoodColor::Blue => Color::RGB(128, 128, 255),
+            };
+            canvas.set_draw_color(color);
+            canvas.fill_rect(Rect::new(
+                food.p.x * CELL_SIZE,
+                food.p.y * CELL_SIZE + INFO_HEIGHT,
+                CELL_SIZE as u32,
+                CELL_SIZE as u32,
+            ))?;
+        }
+    }
+
+    // render poos
+    for poo in &game.poos {
+        if poo.is_exist {
+            let color = Color::RGB(92, 48, 28);
+            canvas.set_draw_color(color);
+            canvas.fill_rect(Rect::new(
+                poo.p.x * CELL_SIZE,
+                poo.p.y * CELL_SIZE + INFO_HEIGHT,
+                CELL_SIZE as u32,
+                CELL_SIZE as u32,
+            ))?;
+        }
+    }
 
     // render bodies
     canvas.set_draw_color(Color::RGBA(61, 122, 61, 255));
@@ -254,6 +249,30 @@ fn render(
             CELL_SIZE as u32,
         ))?;
     }
+
+    // render head
+    let head = resources.images.get_mut("head").unwrap();
+    canvas.copy_ex(
+        &head.texture,
+        None,
+        Rect::new(
+            game.player.p.x * CELL_SIZE,
+            game.player.p.y * CELL_SIZE + INFO_HEIGHT,
+            CELL_SIZE as u32,
+            CELL_SIZE as u32,
+        ),
+        game.player.get_angle() as f64, /* SDLのangleは時計回りが正 */
+        Point::new(CELL_SIZE / 2, CELL_SIZE / 2),
+        false,
+        false,
+    )?;
+    // canvas.set_draw_color(Color::RGBA(61, 122, 61, 255));
+    // canvas.fill_rect(Rect::new(
+    //     game.player.p.x * CELL_SIZE,
+    //     game.player.p.y * CELL_SIZE + INFO_HEIGHT,
+    //     CELL_SIZE as u32,
+    //     CELL_SIZE as u32,
+    // ))?;
 
     if game.is_over {
         canvas.set_draw_color(Color::RGBA(255, 0, 0, 128));
@@ -324,13 +343,13 @@ fn render(
         format!("{0: >3}", game.blue_ate_count),
     );
 
-    render_number(
-        canvas,
-        resources,
-        SCREEN_WIDTH as i32 - 8 * 8,
-        INFO_MARGIN_TOP,
-        format!("{0: >8}", game.score),
-    );
+    // render_number(
+    //     canvas,
+    //     resources,
+    //     SCREEN_WIDTH as i32 - 8 * 8,
+    //     INFO_MARGIN_TOP,
+    //     format!("{0: >8}", game.score),
+    // );
 
     canvas.present();
 
