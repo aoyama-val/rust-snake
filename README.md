@@ -2,6 +2,10 @@
 
 The snake game written in Rust.
 
+
+https://github.com/aoyama-val/rust-snake/assets/13144822/85f47682-494f-443b-9aa0-281e068c5aa2
+
+
 - 動き回っているとお腹が空きます
 - 満腹度が0になるとゲームオーバー
 - 食べ物を食べるとお腹がふくれます
