@@ -214,7 +214,7 @@ fn render(
     game: &Game,
     resources: &mut Resources,
 ) -> Result<(), String> {
-    canvas.set_draw_color(Color::RGB(0, 0, 0));
+    canvas.set_draw_color(Color::RGB(154, 230, 192));
     canvas.clear();
 
     // render foods
